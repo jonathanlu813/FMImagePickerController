@@ -17,10 +17,11 @@
 @interface FMAssetCollectionViewController : UIViewController <UICollectionViewDataSource, UICollectionViewDelegate>
 @property id<FMAssetCollectionViewControllerDelegate> delegate;
 @property (nonatomic, retain) NSArray* assets;
+@property (nonatomic, assign) NSInteger maximum;
 @property BOOL selectionMode;
 @property NSUInteger cellSize;
 @property CGFloat cellSpacing;
--(NSArray*)selectedAssets;
+- (void)setSelectedAssets:(NSArray *)selectedAssets;
 -(void)deselectAll;
 -(void)selectAll;
 @end

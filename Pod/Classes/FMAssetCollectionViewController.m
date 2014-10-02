@@ -81,7 +81,6 @@
 
 -(void)setAssets:(NSArray *)assets{
     _assets = assets;
-    self.selected = [NSMutableArray array];
     if(self.collectionView){
         dispatch_async(dispatch_get_main_queue(), ^
         {
@@ -128,26 +127,26 @@
 
 - (void)assetTap:(UITapGestureRecognizer *)tapRecognizer
 {
+    if (self.selected.count >= self.maximum) {
+        return;
+    }
     NSInteger index = tapRecognizer.view.tag;
     if(self.selectionMode){
         BOOL isSelected = NO;
-        for(int i = 0; i < [self.selected count]; i++){
-            NSNumber* n = [self.selected objectAtIndex:i];
-            if([n integerValue] == index){
+        for (NSURL *selectedUrl in self.selected) {
+            ALAsset *asset = [self.assets objectAtIndex:index];
+            if ([[asset valueForProperty:ALAssetPropertyAssetURL] isEqual:selectedUrl]) {
                 isSelected=YES;
-                [self.selected removeObjectAtIndex:i];
                 break;
             }
         }
         if(!isSelected){
-            [self.selected addObject:[NSNumber numberWithInteger:index]];
+            if(self.delegate!=nil){
+                ALAsset* asset = [self.assets objectAtIndex:index];
+                [self.delegate assetTapped:asset atIndex:index];
+            }
         }
         [self.collectionView reloadData];
-    }
-    
-    if(self.delegate!=nil){
-        ALAsset* asset = [self.assets objectAtIndex:index];
-        [self.delegate assetTapped:asset atIndex:index];
     }
 }
 
@@ -165,8 +164,9 @@
 - (BOOL) assetSelected:(NSUInteger)index{
     if(self.selectionMode){
         BOOL isSelected = NO;
-        for(NSNumber* n in self.selected){
-            if([n integerValue] == index){
+        for (NSURL *selectedUrl in self.selected) {
+            ALAsset *asset = [self.assets objectAtIndex:index];
+            if ([[asset valueForProperty:ALAssetPropertyAssetURL] isEqual:selectedUrl]) {
                 isSelected=YES;
                 break;
             }
@@ -177,14 +177,11 @@
     }
 }
 
--(NSArray*)selectedAssets{
-    NSMutableArray* selection = [NSMutableArray array];
-    for(int i = 0; i < [self.selected count]; i++){
-        NSNumber* n = [self.selected objectAtIndex:i];
-        ALAsset* asset = [self.assets objectAtIndex:[n integerValue]];
-        [selection addObject:asset];
+- (void)setSelectedAssets:(NSArray *)selectedAssets{
+    [self.selected removeAllObjects];
+    for (NSURL *url in selectedAssets) {
+        [self.selected addObject:url];
     }
-    return selection;
 }
 
 -(void)deselectAll{
@@ -194,8 +191,8 @@
 
 -(void)selectAll{
     [self.selected removeAllObjects];
-    for(int index = 0; index < [self.assets count]; index++){
-        [self.selected addObject:[NSNumber numberWithInteger:index]];
+    for (ALAsset *asset in self.assets) {
+        [self.selected addObject:[asset valueForProperty:ALAssetPropertyAssetURL]];
     }
     [self.collectionView reloadData];
 }
